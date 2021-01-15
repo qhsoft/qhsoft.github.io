@@ -8,8 +8,8 @@
 <meta name="keywords" content="徐贵平">
 <meta name="description" content="每天都要有收获">
 <meta name="theme-color" content="#000">
-<title>第一次尝试 | 徐贵平的博客</title>
-<link rel="shortcut icon" href="/favicon.ico?v=1610694124874">
+<title>利用Metabase进行数据分析 | 徐贵平的博客</title>
+<link rel="shortcut icon" href="/favicon.ico?v=1610699310192">
 <link rel="stylesheet" href="/media/css/gemini.css">
 <link rel="stylesheet" href="/media/fonts/font-awesome.css">
 <link
@@ -38,7 +38,7 @@
 
 
 
-  <meta name="description" content="第一次尝试" />
+  <meta name="description" content="利用Metabase进行数据分析" />
   <meta name="keywords" content="" />
 </head>
 
@@ -190,7 +190,8 @@
       <div class="sidebar-body gemini" id="sidebar_body">
         
           
-            
+            <div class="post-side-meta" id="post_side_meta">
+              
 <div class="sidebar-wrapper box-shadow-wrapper bg-color">
   <div class="sidebar-item">
     <img class="site-author-image right-motion" src="/images/avatar.png"/>
@@ -226,6 +227,197 @@
 
 
 </div>
+            </div>
+            <div class="post-toc sidebar-body-active" id="post_toc" style="opacity: 1;">
+              <div class="toc-box right-motion">
+  <div class="toc-wrapper auto-number auto"
+    id="toc_wrapper">
+    <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E4%BB%80%E4%B9%88%E6%98%AFmetabase">什么是Metabase</a></li>
+<li><a href="#%E6%94%AF%E6%8C%81%E6%95%B0%E6%8D%AE%E6%BA%90">支持数据源</a></li>
+<li><a href="#%E4%B8%80%E8%88%AC%E6%AD%A5%E9%AA%A4">一般步骤</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+</div>
+
+<script>
+
+  let lastTop = 0, lList = [], hList = [], postBody, lastIndex = -1;
+  let active = 'active-show', activeClass = 'active-current';
+  let tocWrapper = document.querySelector('#toc_wrapper');
+  let tocContent = tocWrapper.children[0];
+  let autoNumber = tocWrapper && tocWrapper.classList.contains('auto-number');
+
+  function addTocNumber(elem, deep) {
+    if (!elem) {
+      return;
+    }
+    let prop = elem.__proto__;
+
+    if (prop === HTMLUListElement.prototype) {
+      for (let i = 0; i < elem.children.length; i++) {
+        addTocNumber(elem.children[i], deep + (i + 1) + '.');
+      }
+    } else if (prop === HTMLLIElement.prototype) {
+      // 保存li元素
+      if (elem.children[0] && elem.children[0].__proto__ === HTMLAnchorElement.prototype) {
+        lList.push(elem);
+      }
+      for (let i = 0; i < elem.children.length; i++) {
+        let cur = elem.children[i];
+        if (cur.__proto__ === HTMLAnchorElement.prototype) {
+          if (autoNumber) {
+            cur.text = deep + ' ' + cur.text;
+          }
+        } else if (cur.__proto__ === HTMLUListElement.prototype) {
+          addTocNumber(cur, deep);
+        }
+      }
+    }
+  }
+
+  function removeParentActiveClass() {
+    let parents = tocContent.querySelectorAll('.' + active)
+    parents.forEach(function (elem) {
+      elem.classList.remove(active);
+    });
+  }
+
+  function addActiveClass(index) {
+    if (index >= 0 && index < hList.length) {
+      lList[index].classList.add(activeClass);
+    }
+  }
+
+  function removeActiveClass(index) {
+    if (index >= 0 && index < hList.length) {
+      lList[index].classList.remove(activeClass);
+    }
+  }
+
+  function addActiveLiElemment(elem, parent) {
+    if (!elem || elem === parent) {
+      return;
+    } else {
+      if (elem.__proto__ === HTMLLIElement.prototype) {
+        elem.classList.add(active);
+      }
+      addActiveLiElemment(elem.parentElement, parent);
+    }
+  }
+
+  function showToc() {
+    if (tocWrapper) {
+      postBody = document.querySelector('#post_body');
+      for (let i = 0; i < postBody.children.length; i++) {
+        if (postBody.children[i].__proto__ === HTMLHeadingElement.prototype) {
+          hList.push(postBody.children[i]);
+        }
+      }
+      if (tocWrapper.classList.contains('compress')) {
+        tocContent.classList.add('closed');
+      } else if (tocWrapper.classList.contains('no_compress')) {
+        tocContent.classList.add('expanded');
+      } else {
+        if (hList.length > 10) {
+          active = 'active-hidden'
+          tocContent.classList.add('closed');
+        } else {
+          tocContent.classList.add('expanded');
+        }
+      }
+    }
+  }
+
+  (function () {
+    // 处理不是从#一级标题开始目录
+    if (tocContent.children.length === 1 && tocContent.children[0].__proto__ === HTMLLIElement.prototype) {
+      let con = tocContent.children[0].children[0];
+      tocContent.innerHTML = con.innerHTML;
+    }
+    let markdownItTOC = document.querySelector('.markdownIt-TOC');
+    let innerHeight = window.innerHeight;
+    markdownItTOC.style = `max-height: ${innerHeight - 80 > 0 ? innerHeight - 80 : innerHeight}px`
+    addTocNumber(tocContent, '');
+  })();
+
+  document.addEventListener('scroll', function (e) {
+    if (lList.length <= 0) {
+      return;
+    }
+    let scrollTop = document.scrollingElement.scrollTop + 10;
+    let dir;
+
+    if (lastTop - scrollTop > 0) {
+      dir = 'up';
+    } else {
+      dir = 'down';
+    }
+
+    lastTop = scrollTop;
+    if (scrollTop <= 0) {
+      if (lastIndex >= 0 && lastIndex < hList.length) {
+        lList[lastIndex].classList.remove(activeClass);
+      }
+      return;
+    }
+
+    let current = 0, hasFind = false;
+    for (let i = 0; i < hList.length; i++) {
+      if (hList[i].offsetTop > scrollTop) {
+        current = i;
+        hasFind = true;
+        break;
+      }
+    }
+    if (!hasFind && scrollTop > lList[lList.length - 1].offsetTop) {
+      current = hList.length - 1;
+    } else {
+      current--;
+    }
+    if (dir === 'down') {
+      if (current > lastIndex) {
+        addActiveClass(current);
+        removeActiveClass(lastIndex)
+        lastIndex = current;
+        removeParentActiveClass();
+        lList[current] && addActiveLiElemment(lList[current].parentElement, tocContent);
+      }
+    } else {
+      if (current < lastIndex) {
+        addActiveClass(current);
+        removeActiveClass(lastIndex);
+        lastIndex = current;
+        removeParentActiveClass();
+        lList[current] && addActiveLiElemment(lList[current].parentElement, tocContent);
+      }
+    }
+  });
+
+
+  window.addEventListener('load', function () {
+    showToc();
+    document.querySelector('#sidebar').style = 'display: block;';
+    tocWrapper.classList.add('toc-active');
+    setTimeout(function () {
+      if ("createEvent" in document) {
+        let evt = document.createEvent("HTMLEvents");
+        evt.initEvent("scroll", false, true);
+        document.dispatchEvent(evt);
+      }
+      else {
+        document.fireEvent("scroll");
+      }
+    }, 500)
+  })
+
+</script>
+            </div>
           
         
       </div>
@@ -314,7 +506,7 @@
             <section class="post-header">
   <h1 class="post-title">
     <a class="post-title-link" href="https://www.xugp.com/post/di-yi-ci-chang-shi/">
-      第一次尝试
+      利用Metabase进行数据分析
     </a>
   </h1>
   <div class="post-meta">
@@ -339,14 +531,42 @@
     <span class="meta-item">
       <span class="post-meta-divider">|</span>
       <i class="fa fa-file-word-o"></i>
-      <span>13<span class="pc-show language" data-lan="words">字数</span></span>
+      <span>233<span class="pc-show language" data-lan="words">字数</span></span>
     </span>
     
   </div>
 </section>
             <div class="post-body next-md-body" id="post_body">
-              <p>#首页到底在哪里？<br>
-好麻烦的样子</p>
+              <blockquote>
+<p>最近接了个数据分析的活，之前也没有专门研究过，经过朋友的提示，找到了Metabase项目，使用它对mongodb数据库玩了一通，甚是好用，感觉自己又打开了一扇新的大门。</p>
+</blockquote>
+<p><a href="https://www.metabase.com/">Metabase</a></p>
+<h2 id="什么是metabase">什么是Metabase</h2>
+<p>Metabase is a simple and powerful analytics tool which lets anyone learn and make decisions from their company’s data. No technical knowledge required! We hope you love it.</p>
+<h2 id="支持数据源">支持数据源</h2>
+<p>支持常见的关系型数据库：mysql, postgresql,oracle,mssql，支持非关系型数据库mongodb.<br>
+支持自己开发新的数据库驱动模块</p>
+<h2 id="一般步骤">一般步骤</h2>
+<ol>
+<li>下载安装<br>
+'''<br>
+https://www.metabase.com/start/oss/jar.html<br>
+java运行：<br>
+java -jar metabase.jar<br>
+docker运行：<br>
+docker run -d -p 3000:3000 --name metabase metabase/metabase<br>
+macos：<br>
+下载安装app<br>
+'''</li>
+<li>配置数据库</li>
+<li><strong>使用流程</strong>
+<ol>
+<li>修改字段说明</li>
+<li>建立问题，每个问题对应与一个报表</li>
+<li>建立仪表盘，一个仪表盘可以加入多个问题</li>
+</ol>
+</li>
+</ol>
 
             </div>
             
@@ -359,7 +579,7 @@
     </li>
     <li class="post-copyright-link">
       <strong class="language" data-lan="link">本文链接：</strong>
-      <a href="https://www.xugp.com/post/di-yi-ci-chang-shi/" title="第一次尝试">https://www.xugp.com/post/di-yi-ci-chang-shi/</a>
+      <a href="https://www.xugp.com/post/di-yi-ci-chang-shi/" title="利用Metabase进行数据分析">https://www.xugp.com/post/di-yi-ci-chang-shi/</a>
     </li>
     <li class="post-copyright-license">
       <strong class="language" data-lan="copyright">版权声明： </strong>
@@ -826,9 +1046,37 @@
       
       <div class="item">
         <a class="result-title" style="opacity: 0;" href="https://www.xugp.com/post/di-yi-ci-chang-shi/"" data-c="
-          &lt;p&gt;#首页到底在哪里？&lt;br&gt;
-好麻烦的样子&lt;/p&gt;
-">第一次尝试</a>
+          &lt;blockquote&gt;
+&lt;p&gt;最近接了个数据分析的活，之前也没有专门研究过，经过朋友的提示，找到了Metabase项目，使用它对mongodb数据库玩了一通，甚是好用，感觉自己又打开了一扇新的大门。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.metabase.com/&#34;&gt;Metabase&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&#34;什么是metabase&#34;&gt;什么是Metabase&lt;/h2&gt;
+&lt;p&gt;Metabase is a simple and powerful analytics tool which lets anyone learn and make decisions from their company’s data. No technical knowledge required! We hope you love it.&lt;/p&gt;
+&lt;h2 id=&#34;支持数据源&#34;&gt;支持数据源&lt;/h2&gt;
+&lt;p&gt;支持常见的关系型数据库：mysql, postgresql,oracle,mssql，支持非关系型数据库mongodb.&lt;br&gt;
+支持自己开发新的数据库驱动模块&lt;/p&gt;
+&lt;h2 id=&#34;一般步骤&#34;&gt;一般步骤&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;下载安装&lt;br&gt;
+&#39;&#39;&#39;&lt;br&gt;
+https://www.metabase.com/start/oss/jar.html&lt;br&gt;
+java运行：&lt;br&gt;
+java -jar metabase.jar&lt;br&gt;
+docker运行：&lt;br&gt;
+docker run -d -p 3000:3000 --name metabase metabase/metabase&lt;br&gt;
+macos：&lt;br&gt;
+下载安装app&lt;br&gt;
+&#39;&#39;&#39;&lt;/li&gt;
+&lt;li&gt;配置数据库&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;使用流程&lt;/strong&gt;
+&lt;ol&gt;
+&lt;li&gt;修改字段说明&lt;/li&gt;
+&lt;li&gt;建立问题，每个问题对应与一个报表&lt;/li&gt;
+&lt;li&gt;建立仪表盘，一个仪表盘可以加入多个问题&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+">利用Metabase进行数据分析</a>
       </div>
       
       <div class="item">
@@ -836,10 +1084,6 @@
           &lt;blockquote&gt;
 &lt;p&gt;欢迎来到我的小站呀，很高兴遇见你！🤝&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;h2 id=&#34;关于本站&#34;&gt;🏠 关于本站&lt;/h2&gt;
-&lt;h2 id=&#34;博主是谁&#34;&gt;👨‍💻 博主是谁&lt;/h2&gt;
-&lt;h2 id=&#34;兴趣爱好&#34;&gt;⛹ 兴趣爱好&lt;/h2&gt;
-&lt;h2 id=&#34;联系我呀&#34;&gt;📬 联系我呀&lt;/h2&gt;
 ">关于</a>
       </div>
       
